@@ -42,15 +42,26 @@ class ChatPDF:
         self.chain = None
 
     def ingest(self, pdf_file_path: str):
+        #Ler documento
+        #-----------------------------
         docs = PyPDFLoader(file_path=pdf_file_path).load()
+
+        #Split nos documentos
+        #-----------------------------
         chunks = self.text_splitter.split_documents(docs)
         chunks = filter_complex_metadata(chunks)
 
+        #Armazenamento e trasnformação dos embeddings
+        #-----------------------------
         self.vector_store = Chroma.from_documents(
             documents=chunks,
             embedding=FastEmbedEmbeddings(),
             persist_directory="chroma_db",
         )
+
+
+    def format_docs(self,docs):
+        return "\n\n".join(doc.page_content for doc in docs)
 
     def ask(self, query: str):
         if not self.vector_store:
@@ -58,6 +69,8 @@ class ChatPDF:
                 persist_directory="chroma_db", embedding=FastEmbedEmbeddings()
             )
 
+        #Buscar dos dados do chromedb para adicionar no contexto -> Recuperador de texto as_retriever
+        #-----------------------------
         self.retriever = self.vector_store.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={"k": 10, "score_threshold": 0.0},
@@ -65,15 +78,17 @@ class ChatPDF:
 
         self.retriever.invoke(query)
 
+        # Ajuste da corrente (chain) com a LLM
+        #-----------------------------
         self.chain = (
-            {"context": self.retriever, "question": RunnablePassthrough()}
+            {"context": self.retriever | self.format_docs, "question": RunnablePassthrough()}
             | self.prompt
             | self.model
             | StrOutputParser()
         )
 
         if not self.chain:
-            return "Please, add a PDF document first."
+            return "Por favor, adicione um documento PDF primeiro."
 
         return self.chain.invoke(query)
 
