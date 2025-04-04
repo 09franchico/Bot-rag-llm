@@ -68,7 +68,7 @@ def read_and_save_file():
 def page():
     if len(st.session_state) == 0:
         st.session_state["messages"] = []
-        st.session_state["assistant"] = ChatPDF(llm_model="deepseek-chat",online_llm=True)
+        st.session_state["assistant"] = ChatPDF(llm_model="gemini-2.0-flash-001",online_llm=True)
 
     st.header("Chat de PDF")
 

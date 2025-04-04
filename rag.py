@@ -9,6 +9,7 @@ from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 from langchain_deepseek import ChatDeepSeek
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 
@@ -25,10 +26,14 @@ class ChatPDF:
     def __init__(self, llm_model: str = "qwen2.5",online_llm = False):
 
         if online_llm:
-            self.model = ChatDeepSeek(
-                model=llm_model,
+            # self.model = ChatDeepSeek(
+            #     model=llm_model,
+            #     temperature=0,
+            # )
+            self.model = ChatGoogleGenerativeAI(
+                model="gemini-2.0-flash-001",
                 temperature=0,
-            )
+               )
         else:
             self.model = ChatOllama(model=llm_model)
        
@@ -54,6 +59,8 @@ class ChatPDF:
         self.chain = None
 
     def ingest(self, pdf_file_path: str):
+        
+            
         #Ler documento
         #-----------------------------
         docs = PyPDFLoader(file_path=pdf_file_path).load()
@@ -62,6 +69,7 @@ class ChatPDF:
         #-----------------------------
         chunks = self.text_splitter.split_documents(docs)
         chunks = filter_complex_metadata(chunks)
+        
 
         #Armazenamento e trasnformação dos embeddings
         #-----------------------------
