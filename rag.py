@@ -8,6 +8,9 @@ from langchain.schema.runnable import RunnablePassthrough
 from langchain_community.vectorstores.utils import filter_complex_metadata
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
+from langchain_deepseek import ChatDeepSeek
+
+
 
 
 set_debug(True)
@@ -19,8 +22,17 @@ class ChatPDF:
     retriever = None
     chain = None
 
-    def __init__(self, llm_model: str = "qwen2.5"):
-        self.model = ChatOllama(model=llm_model)
+    def __init__(self, llm_model: str = "qwen2.5",online_llm = False):
+
+        if online_llm:
+            self.model = ChatDeepSeek(
+                model=llm_model,
+                temperature=0,
+            )
+        else:
+            self.model = ChatOllama(model=llm_model)
+       
+
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1024, chunk_overlap=100
         )
@@ -55,7 +67,7 @@ class ChatPDF:
         #-----------------------------
         self.vector_store = Chroma.from_documents(
             documents=chunks,
-            embedding=FastEmbedEmbeddings(),
+            embedding=FastEmbedEmbeddings(model_name="jinaai/jina-embeddings-v2-base-de"),
             persist_directory="chroma_db",
         )
 
@@ -66,7 +78,7 @@ class ChatPDF:
     def ask(self, query: str):
         if not self.vector_store:
             self.vector_store = Chroma(
-                persist_directory="chroma_db", embedding=FastEmbedEmbeddings()
+                persist_directory="chroma_db", embedding=FastEmbedEmbeddings(model_name="jinaai/jina-embeddings-v2-base-de")
             )
 
         #Buscar dos dados do chromedb para adicionar no contexto -> Recuperador de texto as_retriever

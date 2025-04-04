@@ -1,14 +1,18 @@
-#!/bin/env python3
 import os
 import time
 import tempfile
 import streamlit as st
 from streamlit_chat import message
 from rag import ChatPDF
+from dotenv import load_dotenv
 
-st.set_page_config(page_title="ChatPDF")
+load_dotenv()
 
 
+st.set_page_config(page_title="Chat de PDF")
+
+
+#------------------------------------------------------------------
 def display_messages():
     st.subheader("Chat")
     for i, (msg, is_user) in enumerate(st.session_state["messages"]):
@@ -16,6 +20,7 @@ def display_messages():
     st.session_state["thinking_spinner"] = st.empty()
 
 
+#------------------------------------------------------------------
 def process_input():
     if (
         st.session_state["user_input"]
@@ -28,7 +33,11 @@ def process_input():
         st.session_state["messages"].append((user_text, True))
         st.session_state["messages"].append((agent_text, False))
 
+        st.session_state["user_input"] = ""
 
+
+
+#------------------------------------------------------------------
 def read_and_save_file():
     st.session_state["assistant"].clear()
     st.session_state["messages"] = []
@@ -55,14 +64,15 @@ def read_and_save_file():
         os.remove(file_path)
 
 
+#------------------------------------------------------------------
 def page():
     if len(st.session_state) == 0:
         st.session_state["messages"] = []
-        st.session_state["assistant"] = ChatPDF(llm_model="gemma3:1b")
+        st.session_state["assistant"] = ChatPDF(llm_model="deepseek-chat",online_llm=True)
 
-    st.header("ChatPDF")
+    st.header("Chat de PDF")
 
-    st.subheader("Upload a document")
+    st.subheader("Upload de documentos")
     st.file_uploader(
         "Upload document",
         type=["pdf"],
@@ -75,7 +85,7 @@ def page():
     st.session_state["ingestion_spinner"] = st.empty()
 
     display_messages()
-    st.text_input("Message", key="user_input", on_change=process_input)
+    st.text_input("Mensagem", key="user_input", on_change=process_input)
 
 
 if __name__ == "__main__":
